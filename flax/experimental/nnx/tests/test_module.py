@@ -476,6 +476,47 @@ class TestModulePytree:
     assert m.node.value == 2
     assert m.static == 1
 
+  def test_static(self):
+    class C(nnx.Module, experimental_pytree=True):
+      def __init__(self, x):
+        self.x = x
+
+    n = 0
+
+    @jax.jit
+    def f(x):
+      nonlocal n
+      n += 1
+
+    f(C(1))
+    assert n == 1
+    f(C(1))
+    assert n == 1
+    f(C(2))
+    assert n == 2
+    f(C(2))
+    assert n == 2
+
+  def test_static2(self):
+    class C(nnx.Module, experimental_pytree=True):
+      def __init__(self, x):
+        self.x = x
+
+    c = C(1)
+    d = C(2)
+
+    values, tree = jax.tree.flatten(c)
+    valuesd, treed = jax.tree.flatten(d)
+
+    @jax.jit
+    def f(x):
+      print(x.x)
+
+    print(hash(tree), hash(treed), tree, treed, values, valuesd)
+    f(c)
+    f(d)
+    f(c)
+
 
 class TestModuleDataclass:
   def test_basic(self):
